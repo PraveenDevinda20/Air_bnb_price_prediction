@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>StayGauge Airbnb Price Prediction</title>
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    :root{
+      --bg:#0d1220; --panel:#0f1526; --panel-2:#121a31;
+      --text:#e8ecf5; --muted:#9aa3b2; --accent:#7c8cff; --accent-2:#a47cff;
+      --ok:#22c55e; --warn:#f59e0b; --border:rgba(255,255,255,.08);
+      --blur:8px; --radius:14px; --radius-lg:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text); background: radial-gradient(1200px 600px at 20% 0%, #0f1a35 0%, #0b1022 45%, #0b0e1a 100%);
+    }
+    a{color:inherit}
+    .wrap{max-width:1100px; margin:0 auto; padding:0 18px}
+
+    /* ---------- HERO (full screen) ---------- */
+    .hero{
+      position:relative;
+      height:100vh;
+      width:100%;
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
+    }
+    .hero video{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; object-position:center;
+      filter:brightness(.55) saturate(1.05) contrast(1.05);
+    }
+    .hero::after{
+      content:""; position:absolute; inset:0;
+      background: radial-gradient(900px 420px at 50% 20%, rgba(0,0,0,.15), transparent 55%),
+                  linear-gradient(to bottom, rgba(8,12,24,.0), rgba(8,12,24,.45) 60%, rgba(8,12,24,.85));
+      pointer-events:none;
+    }
+    .hero-card{
+      position:relative; z-index:2; width:min(900px, 92%);
+      padding:28px 28px 24px;
+      border-radius:var(--radius-lg);
+      background:rgba(10,14,26,.42);
+      border:1px solid var(--border);
+      box-shadow:0 20px 70px rgba(0,0,0,.45);
+      backdrop-filter: blur(var(--blur));
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; opacity:.95}
+    .brand i{color:var(--accent)}
+    h1{margin:14px 0 10px; font-size:clamp(28px, 3.6vw, 42px)}
+    .sub{color:var(--muted); margin-bottom:18px}
+    .btns{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px;
+      height:40px; padding:0 14px; border-radius:10px; font-weight:700;
+      border:1px solid var(--border); cursor:pointer; user-select:none;
+      background: linear-gradient(180deg, rgba(25,30,55,.85), rgba(20,24,45,.78));
+      color:var(--text);
+    }
+    .btn-primary{
+      color:#fff; border-color:rgba(124,140,255,.35);
+      background:linear-gradient(180deg, #6e7dff, #5364ff);
+      box-shadow: 0 8px 28px rgba(127,139,254,.35);
+    }
+    .btn:hover{transform:translateY(-1px); transition:150ms ease}
+
+    .scroll-down{
+      position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+      background:rgba(0,0,0,.45); border:1px solid var(--border);
+      color:#e9e9ef; border-radius:999px; padding:10px 12px; cursor:pointer;
+      display:flex; align-items:center; gap:8px; font-weight:600;
+      backdrop-filter: blur(6px);
+    }
+    .scroll-down:hover{ background:rgba(0,0,0,.6) }
+
+    /* ---------- FORM SECTION ---------- */
+    .section{ padding:40px 0 90px; }
+    .card{
+      background: linear-gradient(180deg, rgba(17,23,44,.65), rgba(11,16,32,.72));
+      border:1px solid var(--border);
+      border-radius:var(--radius-lg); padding:26px 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    }
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr 1fr} }
+    @media (max-width: 680px){ .grid{grid-template-columns: 1fr} }
+
+    .fgroup{display:flex; flex-direction:column; gap:8px}
+    .label{font-size:13px; color:#c9d1e6cc}
+    .input, .select{
+      background:#0c142b; color:var(--text); border:1px solid #202a46;
+      height:42px; border-radius:10px; padding:0 12px; outline:none;
+    }
+    .input:focus, .select:focus{border-color:#3b4d88}
+
+    .actions{display:flex; gap:10px; margin-top:10px}
+    .pill{height:40px; padding:0 14px; border-radius:999px; border:1px solid var(--border); font-weight:700}
+    .pill.primary{background:linear-gradient(180deg, #6e7dff, #5364ff); color:#fff}
+    .pill.ghost{background:transparent; color:#c9d1e6aa}
+
+    .result{
+      display:none; margin-top:18px; padding:18px; border-radius:12px;
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(16,22,40,.85), rgba(12,18,34,.9));
+    }
+    .price{font-size:26px; font-weight:800}
+    .fade-in{animation:fade .35s ease both}
+    @keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+    .loader{
+      display:none; align-items:center; gap:10px; color:#a9b2c9; font-weight:700;
+      margin-top:10px
+    }
+    .spinner{
+      width:22px; height:22px; border-radius:50%;
+      border:3px solid rgba(255,255,255,.12);
+      border-top-color: #7c8cff;
+      animation:spin .8s linear infinite
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    dialog{
+      border:none; border-radius:16px; padding:0; width:min(680px, 92%);
+      background:#0f162b; color:var(--text); border:1px solid var(--border)
+    }
+    dialog::backdrop{background:rgba(0,0,0,.55); backdrop-filter: blur(2px)}
+    .modal-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--border)}
+    .modal-body{padding:16px}
+    .close{background:transparent; border:1px solid var(--border); color:#cbd2e3; height:34px; padding:0 12px; border-radius:999px}
+  </style>
+</head>
+
+<body>
+  <!-- HERO -->
+  <section class="hero">
+    <video src="/static/video/airbnb.mp4" autoplay muted loop playsinline></video>
+    <div class="hero-card wrap">
+      <div class="brand">
+        <i class="fa-solid fa-chart-line"></i> StayGauge</div>
+      <h1>Airbnb Price Prediction</h1>
+      <div class="sub">
+        Enter 13 features and get a fast, instructor-friendly estimate of the nightly price.
+      </div>
+      <div class="btns">
+        <button id="btnCheck" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Check Price</button>
+        <button id="btnAbout" class="btn"><i class="fa-regular fa-circle-question"></i> About</button>
+      </div>
+    </div>
+    <button id="scrollDown" class="scroll-down"><i class="fa-solid fa-angles-down"></i> Scroll</button>
+  </section>
+
+  <!-- FORM -->
+  <section class="section" id="form">
+    <div class="wrap card">
+      <div class="grid">
+        <!-- Cols -->
+        <div class="fgroup">
+          <label class="label">Bedrooms</label>
+          <input id="bedrooms" type="number" step="1" min="0" class="input" value="2">
+        </div>
+        <div class="fgroup">
+          <label class="label">Bathrooms</label>
+          <input id="bathrooms" type="number" step="0.5" min="0" class="input" value="1">
+        </div>
+        <div class="fgroup">
+          <label class="label">Accommodates</label>
+          <input id="accommodates" type="number" min="1" step="1" class="input" value="3">
+        </div>
+
+        <div class="fgroup">
+          <label class="label">Minimum nights</label>
+          <input id="minimum_nights" type="number" min="1" step="1" class="input" value="1">
+        </div>
+        <div class="fgroup">
+          <label class="label">Maximum nights</label>
+          <input id="maximum_nights" type="number" min="1" step="1" class="input" value="365">
+        </div>
+        <div class="fgroup">
+          <label class="label">Number of reviews</label>
+          <input id="number_of_reviews" type="number" min="0" step="1" class="input" value="10">
+        </div>
+
+        <div class="fgroup">
+          <label class="label">Review score rating</label>
+          <input id="review_scores_rating" type="number" min="0" max="100" step="0.5" class="input" value="94.0">
+        </div>
+        <div class="fgroup">
+          <label class="label">Amenity count</label>
+          <input id="amenity_count" type="number" min="0" step="1" class="input" value="12">
+        </div>
+        <div class="fgroup">
+          <label class="label">Superhost?</label>
+          <select id="host_is_superhost_01" class="select"><option>No</option><option>Yes</option></select>
+        </div>
+
+        <div class="fgroup">
+          <label class="label">Instant bookable?</label>
+          <select id="instant_bookable_01" class="select"><option>No</option><option>Yes</option></select>
+        </div>
+        <div class="fgroup">
+          <label class="label">Room type</label>
+          <select id="room_type" class="select"></select>
+        </div>
+        <div class="fgroup">
+          <label class="label">Property type</label>
+          <select id="property_type" class="select"></select>
+        </div>
+
+        <div class="fgroup">
+          <label class="label">Neighbourhood</label>
+          <select id="neighbourhood_cleansed" class="select"></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="btnPredict" class="pill primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Predict</button>
+        <button id="btnClear" class="pill ghost">Clear</button>
+      </div>
+
+      <div id="loader" class="loader">
+        <div class="spinner"></div> Predicting…
+      </div>
+
+      <div id="result" class="result">
+        <div style="display:flex; gap:10px; align-items:center">
+          <i class="fa-solid fa-tag" style="color:#83ffa7"></i>
+          <div>
+            <div class="price" id="priceTxt">$0.00</div>
+            <div id="rangeTxt" style="color:#9fb1d9; font-size:13.5px; margin-top:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT MODAL -->
+  <dialog id="about">
+    <div class="modal-head">
+      <div style="display:flex; align-items:center; gap:10px; font-weight:800">
+        <i class="fa-solid fa-circle-info" style="color:var(--accent)"></i> About
+      </div>
+      <button class="close" onclick="document.getElementById('about').close()">Close</button>
+    </div>
+    <div class="modal-body" id="aboutBody">Loading…</div>
+  </dialog>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    // Smooth scroll from hero
+    $('btnCheck').addEventListener('click', () =>
+      $('form').scrollIntoView({behavior:'smooth', block:'start'}));
+    $('scrollDown').addEventListener('click', () =>
+      $('form').scrollIntoView({behavior:'smooth', block:'start'}));
+
+    // "About" modal
+    $('btnAbout').addEventListener('click', async () => {
+      try{
+        const r = await fetch('/about');
+        const t = await r.text();
+        $('aboutBody').innerHTML = `<div style="white-space:pre-wrap; line-height:1.55">${t}</div>`;
+      }catch(e){
+        $('aboutBody').textContent = 'About text not available.';
+      }
+      $('about').showModal();
+    });
+
+    // Load schema for dropdowns
+    async function loadSchema(){
+      try{
+        const r = await fetch('/schema');
+        const s = await r.json();
+        fillSelect('room_type', s.room_type_options || ['Entire home/apt']);
+        fillSelect('property_type', s.property_type_options || ['Apartment']);
+        fillSelect('neighbourhood_cleansed', s.neighbourhood_cleansed_options || ['Unknown']);
+      }catch(e){
+        fillSelect('room_type', ['Entire home/apt']);
+        fillSelect('property_type', ['Apartment']);
+        fillSelect('neighbourhood_cleansed', ['Unknown']);
+      }
+    }
+    function fillSelect(id, opts){
+      const el = $(id); el.innerHTML = '';
+      (opts || []).forEach(v=>{
+        const o = document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o);
+      })
+    }
+    loadSchema();
+
+    // Predict
+    $('btnPredict').addEventListener('click', async () => {
+      const payload = {
+        bedrooms: num('bedrooms'), bathrooms: num('bathrooms'), accommodates: num('accommodates'),
+        minimum_nights: num('minimum_nights'), maximum_nights: num('maximum_nights'),
+        number_of_reviews: num('number_of_reviews'), review_scores_rating: num('review_scores_rating'),
+        amenity_count: num('amenity_count'),
+        host_is_superhost_01: sel01('host_is_superhost_01'),
+        instant_bookable_01:  sel01('instant_bookable_01'),
+        room_type: $('room_type').value,
+        property_type: $('property_type').value,
+        neighbourhood_cleansed: $('neighbourhood_cleansed').value
+      };
+
+      showLoader(true);
+      try{
+        const r = await fetch('/predict', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        showLoader(false);
+
+        // tolerant to either {price} or {predicted_price}
+        const p = (typeof data.price === 'number')
+                  ? data.price
+                  : (typeof data.predicted_price === 'number' ? data.predicted_price : null);
+
+        if(!r.ok || p === null){
+          const msg = (data && data.detail) ? data.detail : 'Prediction failed. Please try again.';
+          return showError(msg);
+        }
+        showPrice(p, data.band || null);
+      }catch(e){
+        showLoader(false); showError('Network error.');
+      }
+    });
+
+    $('btnClear').addEventListener('click', () => {
+      ['bedrooms','bathrooms','accommodates','minimum_nights','maximum_nights',
+       'number_of_reviews','review_scores_rating','amenity_count'].forEach(id=>$(id).value='');
+      $('result').style.display='none';
+    });
+
+    function num(id){ return parseFloat($(id).value || '0') }
+    function sel01(id){ return ($(id).value==='Yes') ? 1 : 0 }
+
+    function showLoader(sh){
+      $('loader').style.display = sh ? 'flex' : 'none';
+      $('result').style.display = 'none';
+    }
+    function showPrice(p, band){
+      $('result').style.display='block';
+      $('result').classList.add('fade-in');
+      countTo($('priceTxt'), p);
+      if(band && band.lo!=null && band.hi!=null){
+        $('rangeTxt').textContent = `Typical range: $${fmt(band.lo)} — $${fmt(band.hi)}`;
+      }else{
+        $('rangeTxt').textContent = '';
+      }
+    }
+    function showError(msg){
+      $('result').style.display='block';
+      $('priceTxt').textContent = msg;
+      $('rangeTxt').textContent = '';
+    }
+    function fmt(v){ return (Math.round(v*100)/100).toLocaleString() }
+
+    // small price animation
+    function countTo(el, target){
+      const start = 0, dur = 550, t0 = performance.now();
+      function step(t){
+        const k = Math.min(1, (t - t0)/dur);
+        const val = start + (target - start) * (1 - Math.pow(1-k, 3));
+        el.textContent = `$${fmt(val)}`;
+        if(k < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+  </script>
+</body>
+</html>
