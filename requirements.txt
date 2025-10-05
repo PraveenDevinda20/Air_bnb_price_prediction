@@ -1,13 +1,21 @@
-pandas
-numpy
-scikit-learn
-matplotlib
-seaborn
-xgboost
-lightgbm
-jupyter
-nltk
-spacy
-wordcloud
-textblob
-streamlit
+# Core
+streamlit==1.39.0
+pandas==2.2.2
+numpy==1.26.4
+
+# Machine Learning
+scikit-learn==1.5.2
+xgboost==2.1.1
+
+# Visualization
+matplotlib==3.9.2
+seaborn==0.13.2
+plotly==5.24.1
+
+# Notebook Support
+jupyter==1.1.1
+notebook==7.2.2
+ipykernel==6.29.5
+
+# Utils
+pathlib==1.0.1
